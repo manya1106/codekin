@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInAs(uid) { return request.auth != null && request.auth.uid == uid; }
+    function validProblem() {
+      return request.resource.data.keys().hasAll(['slug', 'title', 'difficulty', 'status', 'solvedAt'])
+        && request.resource.data.difficulty in ['Easy', 'Medium', 'Hard']
+        && request.resource.data.status in ['attempted', 'solved']
+        && request.resource.data.title is string;
+    }
+
+    match /users/{uid} {
+      allow read, create, update: if signedInAs(uid);
+      allow delete: if false;
+
+      match /problems/{problemId} {
+        allow read: if signedInAs(uid);
+        allow create, update: if signedInAs(uid) && validProblem() && request.resource.data.slug == problemId;
+        allow delete: if signedInAs(uid);
+      }
+      match /private/{document=**} { allow read, write: if signedInAs(uid); }
+      match /roadmaps/{document=**} { allow read, write: if signedInAs(uid); }
+      match /activity/{document=**} { allow read, write: if signedInAs(uid); }
+      match /settings/{document=**} { allow read, write: if signedInAs(uid); }
+    }
+
+    match /catalog/{document=**} { allow read: if request.auth != null; allow write: if false; }
+  }
+}

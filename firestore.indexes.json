@@ -1,0 +1,15 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "problems",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "solvedAt", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "activity",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "type", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}

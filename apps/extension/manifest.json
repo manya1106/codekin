@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Codekin - LeetCode Companion",
+  "version": "0.1.0",
+  "description": "Blind mode, progress tracking, and a tiny coding companion for LeetCode.",
+  "permissions": ["storage", "identity", "alarms", "notifications"],
+  "oauth2": {
+    "client_id": "REPLACE_WITH_CHROME_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "host_permissions": ["https://leetcode.com/*", "https://*.googleapis.com/*"],
+  "background": { "service_worker": "assets/background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Codekin" },
+  "content_scripts": [{ "matches": ["https://leetcode.com/problems/*"], "js": ["assets/content.js"], "run_at": "document_idle" }]
+}
