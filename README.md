@@ -13,7 +13,7 @@ cp apps/extension/.env.example apps/extension/.env.local
 npm run dev
 ```
 
-Fill both environment files with the same Firebase web app configuration. Follow the complete [Firebase setup guide](docs/FIREBASE_SETUP.md) for Authentication, Firestore, Chrome OAuth, deployment, and verification. The PWA deliberately opens in a polished demo/cached state when Firebase is absent.
+Fill both environment files with the same Firebase web app configuration. Follow the complete [Firebase setup guide](docs/FIREBASE_SETUP.md) and [extension setup guide](docs/EXTENSION_SETUP.md). Without Firebase data, the PWA shows an empty state rather than sample account progress.
 
 Build everything:
 
@@ -42,7 +42,7 @@ packages/shared   Types, XP curve, and companion evolution rules
 docs              Architecture, operations, and product roadmap
 ```
 
-Read [the Firebase setup guide](docs/FIREBASE_SETUP.md) first. [The architecture](docs/ARCHITECTURE.md) covers the schema, auth flow, sync model, notification recommendation, scalability notes, and deployment details. See [the roadmap](docs/ROADMAP.md) for MVP and future phases.
+Read [the Firebase setup guide](docs/FIREBASE_SETUP.md) and [extension setup guide](docs/EXTENSION_SETUP.md) first. [The architecture](docs/ARCHITECTURE.md) covers the schema, auth flow, sync model, notification recommendation, scalability notes, and deployment details. See [the roadmap](docs/ROADMAP.md) for MVP and future phases.
 
 ## Important MVP boundaries
 
