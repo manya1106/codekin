@@ -146,16 +146,4 @@ Learn from aggregated data:
 
 ---
 
-## 📝 Contributing
-
-We welcome contributions that advance learning outcomes. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
-
-## 📄 License
-
-[Add your license here]
-
----
-
 **Built with 🦊 to make LeetCode grind smarter, not harder.**
