@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithCredential } from "firebase/auth/web-extension";
-import { doc, getDoc, getFirestore, serverTimestamp, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, getFirestore, serverTimestamp, writeBatch } from "firebase/firestore";
 import { evolutionForLevel, levelFromXp, XP_BY_DIFFICULTY } from "@codekin/shared";
 // ── Firebase init ──────────────────────────────────────────────────────────────
 const config = {
@@ -94,6 +94,17 @@ async function getStatus() {
         lastSync: storage.lastSync ?? null,
     };
 }
+async function enrichProblem(problem) {
+    const meta = await fetchProblemMeta(problem.slug);
+    if (!meta)
+        return problem;
+    return {
+        ...problem,
+        difficulty: meta.difficulty,
+        topics: meta.topics,
+        metadataSource: "leetcode",
+    };
+}
 async function flush() {
     const result = { written: 0, skipped: 0, failed: [], status: "empty" };
     if (!db || !auth)
@@ -162,6 +173,78 @@ async function flush() {
         return result;
     }
 }
+async function repairStoredMetadata() {
+    const result = { checked: 0, repaired: 0, status: "empty", errors: [] };
+    if (!db || !auth)
+        return { ...result, status: "not_connected" };
+    await auth.authStateReady();
+    if (!auth.currentUser)
+        return { ...result, status: "not_connected" };
+    try {
+        const uid = auth.currentUser.uid;
+        const problemsRef = collection(db, "users", uid, "problems");
+        const snapshot = await getDocs(problemsRef);
+        const problems = snapshot.docs
+            .map((item) => ({ id: item.id, data: item.data() }))
+            .filter((item) => item.data.status === "solved");
+        result.checked = problems.length;
+        if (!problems.length)
+            return result;
+        const metaMap = await batchFetchMeta(problems.map((item) => item.id));
+        const batch = writeBatch(db);
+        let totalXp = 0;
+        let latestSolvedAt = null;
+        for (const item of problems) {
+            const meta = metaMap.get(item.id);
+            const nextProblem = meta
+                ? { ...item.data, difficulty: meta.difficulty, topics: meta.topics, metadataSource: "leetcode" }
+                : item.data;
+            totalXp += XP_BY_DIFFICULTY[nextProblem.difficulty];
+            if (!latestSolvedAt || new Date(nextProblem.solvedAt).getTime() > new Date(latestSolvedAt).getTime()) {
+                latestSolvedAt = nextProblem.solvedAt;
+            }
+            const changed = meta && (item.data.difficulty !== meta.difficulty ||
+                item.data.metadataSource !== "leetcode" ||
+                JSON.stringify(item.data.topics ?? []) !== JSON.stringify(meta.topics));
+            if (changed) {
+                result.repaired++;
+                batch.set(doc(db, "users", uid, "problems", item.id), {
+                    difficulty: meta.difficulty,
+                    topics: meta.topics,
+                    metadataSource: "leetcode",
+                    metadataRepairedAt: serverTimestamp(),
+                }, { merge: true });
+            }
+        }
+        if (result.repaired > 0) {
+            const level = levelFromXp(totalXp);
+            const progressRef = doc(db, "users", uid, "private", "progress");
+            const current = (await getDoc(progressRef)).data();
+            batch.set(progressRef, {
+                totalSolved: problems.length,
+                weeklyGoal: current?.weeklyGoal ?? 7,
+                lastSolvedAt: latestSolvedAt,
+                companion: {
+                    ...(current?.companion ?? { mood: "happy", unlockedCosmetics: [], equippedCosmetics: {} }),
+                    xp: totalXp,
+                    level,
+                    evolution: evolutionForLevel(level),
+                },
+                updatedAt: serverTimestamp(),
+            }, { merge: true });
+            await batch.commit();
+            result.status = "updated";
+        }
+        else {
+            result.status = "unchanged";
+        }
+        return result;
+    }
+    catch (error) {
+        result.errors.push(error.message);
+        return result;
+    }
+}
 async function syncHistory() {
     const result = { fetched: 0, queued: 0, alreadyKnown: 0, metadataFetched: 0, flushed: 0, status: "queued_locally", errors: [] };
     // Rate-limit: skip if synced within 1 hour unless forced
@@ -223,6 +306,9 @@ async function syncHistory() {
         const flushResult = await flush();
         result.flushed = flushResult.written;
         result.status = flushResult.written > 0 ? "written_to_firestore" : "queued_locally";
+        const repair = await repairStoredMetadata();
+        result.repaired = repair.repaired;
+        result.errors.push(...repair.errors);
     }
     else {
         result.errors.push("Connect Google account to upload history to Firestore.");
@@ -254,10 +340,16 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
             .then((r) => respond({ ok: true, ...r }))
             .catch((e) => respond({ ok: false, errors: [e.message], fetched: 0, queued: 0, alreadyKnown: 0, metadataFetched: 0, flushed: 0, status: "queued_locally" })));
     }
+    if (message.type === "REPAIR_METADATA") {
+        repairStoredMetadata()
+            .then((r) => respond({ ok: true, ...r }))
+            .catch((e) => respond({ ok: false, checked: 0, repaired: 0, status: "empty", errors: [e.message] }));
+    }
     if (message.type === "QUEUE_SOLVE") {
         getQueue().then(async (queue) => {
             if (!queue.some((x) => x.slug === message.problem.slug)) {
-                queue.push(message.problem);
+                const enriched = await enrichProblem(message.problem);
+                queue.push(enriched);
             }
             await chrome.storage.local.set({ outbox: queue });
             const flushResult = await flush();

@@ -2,6 +2,16 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./popup.css";
+function formatSyncDetail(sync) {
+    const repairText = sync.repaired ? `, ${sync.repaired} metadata repaired` : "";
+    if (sync.status === "written_to_firestore" && (sync.flushed ?? 0) > 0) {
+        return `History: ${sync.fetched} found → ${sync.queued} queued and ${sync.flushed} written to Firestore (${sync.alreadyKnown} already known, ${sync.metadataFetched} with real metadata${repairText})`;
+    }
+    if (sync.status === "queued_locally") {
+        return `History: ${sync.fetched} found → ${sync.queued} queued locally (${sync.alreadyKnown} already known, ${sync.metadataFetched} with real metadata${repairText})`;
+    }
+    return `History: ${sync.fetched} found → ${sync.queued} new (${sync.alreadyKnown} known, ${sync.metadataFetched} with real metadata${repairText})`;
+}
 function Popup() {
     const [blind, setBlind] = useState(true);
     const [appState, setAppState] = useState("checking");
@@ -66,15 +76,7 @@ function Popup() {
                 const sync = r.sync;
                 if (sync && sync.fetched > 0) {
                     setStatusText(`Connected as ${r.name?.split(" ")[0] ?? "coder"}`);
-                    if (sync.status === "written_to_firestore" && (sync.flushed ?? 0) > 0) {
-                        setDetailText(`History: ${sync.fetched} found → ${sync.queued} queued and ${sync.flushed} written to Firestore (${sync.alreadyKnown} already known)`);
-                    }
-                    else if (sync.status === "queued_locally") {
-                        setDetailText(`History: ${sync.fetched} found → ${sync.queued} queued locally; connect Google account to upload to Firestore (${sync.alreadyKnown} already known)`);
-                    }
-                    else {
-                        setDetailText(`History: ${sync.fetched} found → ${sync.queued} queued (${sync.alreadyKnown} known)`);
-                    }
+                    setDetailText(formatSyncDetail(sync));
                 }
                 else if (sync?.errors?.length) {
                     setStatusText(`Connected as ${r.name?.split(" ")[0] ?? "coder"}`);
@@ -105,15 +107,15 @@ function Popup() {
                 }
                 else if (s.status === "written_to_firestore" && (s.flushed ?? 0) > 0) {
                     setStatusText("History synced to Firestore");
-                    setDetailText(`${s.fetched} found → ${s.queued} new, ${s.flushed} written to Firestore (${s.alreadyKnown} already known, ${s.metadataFetched} with real metadata)`);
+                    setDetailText(formatSyncDetail(s));
                 }
                 else if (s.status === "queued_locally") {
                     setStatusText("History queued locally");
-                    setDetailText(`${s.fetched} found → ${s.queued} new queued locally; connect Google account to upload to Firestore (${s.alreadyKnown} already known)`);
+                    setDetailText(formatSyncDetail(s));
                 }
                 else {
                     setStatusText("History synced");
-                    setDetailText(`${s.fetched} found → ${s.queued} new (${s.alreadyKnown} known, ${s.metadataFetched} with real metadata)`);
+                    setDetailText(formatSyncDetail(s));
                 }
             }
             else {

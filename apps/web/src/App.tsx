@@ -68,17 +68,27 @@ interface DashboardProps {
   progress: import("@codekin/shared").UserProgress;
   recent: ProblemRecord[];
   live: boolean;
+  online: boolean;
   loading: boolean;
   error: string | null;
   uid?: string;
 }
 
-function Dashboard({ progress, recent, live, loading, error, uid }: DashboardProps) {
+function Dashboard({ progress, recent, live, online, loading, error, uid }: DashboardProps) {
   const topics = topicSummary(recent);
   const remaining = Math.max(0, progress.weeklyGoal - progress.weeklySolved);
   const dateLabel = new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric" }).format(new Date());
+  const syncLabel = !uid
+    ? "Sign in to sync"
+    : loading
+      ? "Loading progress"
+      : live
+        ? "Live Firestore data"
+        : online
+          ? "Online, using cached data"
+          : "Offline / cached";
   return <div className="space-y-6">
-    <div className="flex items-end justify-between"><div><p className="font-mono text-xs uppercase tracking-[.25em] text-violet">{dateLabel}</p><h1 className="mt-2 text-3xl font-bold md:text-4xl">Ready to level up?</h1></div><span className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">{live ? <Wifi size={14}/> : <WifiOff size={14}/>} {!uid ? "Sign in to sync" : loading ? "Loading progress" : live ? "Live Firestore data" : "Offline / cached"}</span></div>
+    <div className="flex items-end justify-between"><div><p className="font-mono text-xs uppercase tracking-[.25em] text-violet">{dateLabel}</p><h1 className="mt-2 text-3xl font-bold md:text-4xl">Ready to level up?</h1></div><span className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">{online ? <Wifi size={14}/> : <WifiOff size={14}/>} {syncLabel}</span></div>
     {error && <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">Firestore could not load your progress: {error}</div>}
     {uid && !loading && progress.totalSolved === 0 && <div className="rounded-xl border border-cyan/20 bg-cyan/10 px-4 py-3 text-sm text-cyan">No synchronized solves yet. Connect the extension with this same Google account, then submit an accepted LeetCode solution.</div>}
     <Companion companion={progress.companion} remaining={remaining} currentStreak={progress.currentStreak}/>
@@ -118,7 +128,7 @@ export default function App() {
   useEffect(() => auth ? onAuthStateChanged(auth, setUser) : undefined, []);
 
   // Single useProgress call at the top level — fixes the hooks violation
-  const { progress, recent, roadmap, weakTopic, live, loading, error } = useProgress(user?.uid);
+  const { progress, recent, roadmap, weakTopic, live, online, loading, error } = useProgress(user?.uid);
 
   const handlePushNotification = async () => {
     setPushStatus("Requesting...");
@@ -137,7 +147,7 @@ export default function App() {
       </div>{user ? <button onClick={logout} className="flex w-full items-center gap-3 rounded-xl bg-white/5 p-3 text-left"><CircleUserRound size={28}/><span className="min-w-0"><span className="block truncate text-xs font-medium">{user.displayName}</span><span className="block text-[10px] text-slate-500">Sign out</span></span></button> : <button onClick={loginWithGoogle} disabled={!firebaseConfigured} className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-xs font-bold text-ink disabled:cursor-not-allowed disabled:opacity-40"><LogIn size={15}/>{firebaseConfigured?"Continue with Google":"Configure Firebase"}</button>}</div>
     </aside>
     <main className="relative z-10 min-h-screen lg:ml-64"><header className="flex h-16 items-center justify-between border-b border-white/5 px-5 lg:hidden"><button onClick={()=>setMenu(true)}><Menu/></button><span className="font-bold">code<span className="text-lime">kin</span></span><Github size={19} className="text-slate-500"/></header><div className="mx-auto max-w-7xl p-4 pb-24 md:p-8 lg:p-10">
-      {page==="Dashboard"&&<Dashboard progress={progress} recent={recent} live={live} loading={loading} error={error} uid={user?.uid}/>}
+      {page==="Dashboard"&&<Dashboard progress={progress} recent={recent} live={live} online={online} loading={loading} error={error} uid={user?.uid}/>}
       {page==="Challenge"&&<Challenge weakTopic={weakTopic}/>}
       {page==="Roadmap"&&<Roadmap roadmap={roadmap}/>}
       {page==="Quiz"&&<Quiz weakTopic={weakTopic}/>}

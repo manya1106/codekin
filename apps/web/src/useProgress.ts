@@ -22,11 +22,22 @@ export function useProgress(uid?: string) {
   const [roadmap, setRoadmap] = useState<RoadmapProgress[]>([]);
   const [weakTopic, setWeakTopic] = useState<string>("Binary Search");
   const [live, setLive] = useState(false);
+  const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const [loading, setLoading] = useState(Boolean(uid));
   const [error, setError] = useState<string | null>(null);
 
   // Guard: only write streak reset once per session
   const streakResetWritten = useRef(false);
+
+  useEffect(() => {
+    const updateOnline = () => setOnline(navigator.onLine);
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
 
   useEffect(() => {
     setProgress(emptyProgress);
@@ -41,7 +52,7 @@ export function useProgress(uid?: string) {
 
     // ── Listen to progress document ──────────────────────────────────────────
     const progressRef = doc(db, "users", uid, "private", "progress");
-    const unsubscribeProgress = onSnapshot(progressRef, (snapshot) => {
+    const unsubscribeProgress = onSnapshot(progressRef, { includeMetadataChanges: true }, (snapshot) => {
       const data = snapshot.exists() ? snapshot.data() as UserProgress : emptyProgress;
       setProgress(data);
       setLive(!snapshot.metadata.fromCache);
@@ -68,8 +79,9 @@ export function useProgress(uid?: string) {
       orderBy("solvedAt", "desc"),
       limit(20),
     );
-    const unsubscribeRecent = onSnapshot(recentQuery, (snapshot) => {
+    const unsubscribeRecent = onSnapshot(recentQuery, { includeMetadataChanges: true }, (snapshot) => {
       const docs = snapshot.docs.map((d) => d.data() as ProblemRecord);
+      if (!snapshot.metadata.fromCache) setLive(true);
       setRecent(docs.slice(0, 5));
       setAllProblems(docs);
 
@@ -105,5 +117,5 @@ export function useProgress(uid?: string) {
     return () => { unsubscribeProgress(); unsubscribeRecent(); };
   }, [uid]); // Only uid — no progress.totalSolved to avoid infinite loops
 
-  return { progress, recent, roadmap, weakTopic, live, loading, error };
+  return { progress, recent, roadmap, weakTopic, live, online, loading, error };
 }

@@ -1,4 +1,4 @@
-import type { Difficulty, ProblemRecord } from "@codekin/shared";
+import type { ProblemRecord } from "@codekin/shared";
 
 // ── Blind-mode selectors: precise, LeetCode-specific only ──────────────────────
 const STYLE_ID = "codekin-blind-mode";
@@ -64,14 +64,6 @@ function reveal() {
   }
 }
 
-// ── Difficulty inference (for submission capture on problem pages) ──────────────
-function inferDifficulty(): Difficulty {
-  const text = document.body.innerText;
-  if (/\bHard\b/.test(text)) return "Hard";
-  if (/\bMedium\b/.test(text)) return "Medium";
-  return "Easy";
-}
-
 // ── Companion widget (only on problem pages) ───────────────────────────────────
 function mountWidget() {
   if (document.getElementById("codekin-widget")) return; // already mounted
@@ -114,7 +106,7 @@ function watchSubmissions() {
     const problem: ProblemRecord = {
       slug: currentSlug(),
       title,
-      difficulty: inferDifficulty(),
+      difficulty: "Medium",
       topics: [],
       status: "solved",
       solvedAt: new Date().toISOString(),

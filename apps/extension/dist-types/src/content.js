@@ -54,15 +54,6 @@ function reveal() {
         void chrome.storage.local.set({ [`attempted:${currentSlug()}`]: true });
     }
 }
-// ── Difficulty inference (for submission capture on problem pages) ──────────────
-function inferDifficulty() {
-    const text = document.body.innerText;
-    if (/\bHard\b/.test(text))
-        return "Hard";
-    if (/\bMedium\b/.test(text))
-        return "Medium";
-    return "Easy";
-}
 // ── Companion widget (only on problem pages) ───────────────────────────────────
 function mountWidget() {
     if (document.getElementById("codekin-widget"))
@@ -108,7 +99,7 @@ function watchSubmissions() {
         const problem = {
             slug: currentSlug(),
             title,
-            difficulty: inferDifficulty(),
+            difficulty: "Medium",
             topics: [],
             status: "solved",
             solvedAt: new Date().toISOString(),
