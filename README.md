@@ -1,94 +1,161 @@
-🦊 Codekin
-Your AI-Ready LeetCode Companion
+# 🦊 Codekin
+**Your AI-Ready LeetCode Companion**
 
-Codekin is an installable React Progressive Web App (PWA) and a Manifest V3 Chrome Extension designed to supercharge your LeetCode grind. It goes beyond simple tracking by adding spoiler-free practice, offline progress capture, real-time cross-device sync, and an interactive companion that evolves as you consistently put in the work.
+Codekin is an installable React PWA and Manifest V3 Chrome Extension that transforms your LeetCode practice into a structured learning experience. Beyond simple progress tracking, it provides AI-driven guidance, spaced repetition learning, and real-time performance analytics to accelerate your growth as a problem solver.
 
-✨ Key Features
-Companion Evolution: Stay motivated with a virtual companion that levels up and evolves based on your problem-solving consistency and XP gain.
+## ✨ Core Features
 
-Spoiler-Free Practice: Hides optimal solutions, related tags, and acceptance rates until you are ready to see them, preventing accidental hints.
+**Spoiler-Free Learning Environment**
+Prevents accidental hints by hiding optimal solutions, related tags, and acceptance rates until you're ready to see them.
 
-Real-Time Sync: Seamlessly sync your progress across your browser extension and mobile/desktop PWA using Firebase.
+**Real-Time Progress Sync**
+Seamlessly sync your practice data across browser extension, mobile, and desktop using Firebase. Your learning journey stays in sync, everywhere.
 
-Offline Support: Your progress is captured even if you lose your connection, syncing automatically once you're back online.
+**Offline-First Learning**
+Continue your practice offline. Progress is automatically captured and synced when you're back online—no learning gaps.
 
-AI-Ready: Built from the ground up to integrate AI-driven hints and learning paths (see Roadmap below).
+**Motivation Through Progression**
+Track consistency with streaks and visual progression metrics that keep you engaged without sacrificing substance.
 
-🏗️ Workspace Architecture
-This project is structured as a monorepo containing both the web app and the browser extension:
+---
 
-Plaintext
-apps/web           # React + Vite + Tailwind + Framer Motion PWA
-apps/extension     # React popup + MV3 worker + LeetCode content script
-packages/shared    # Types, XP curve logic, and companion evolution rules
-docs               # Architecture, operations, and product roadmap
-Note: Please read the Architecture Guide for deep dives into our database schema, auth flow, sync model, notification recommendations, and scalability notes.
+## 🏗️ Project Architecture
 
-🚀 Quick Start
-1. Prerequisites
-Node.js: Version 20+
+This is a monorepo containing integrated tools for distributed learning:
 
-Firebase: A Firebase project with Google Authentication and Firestore enabled. (See the Firebase Setup Guide for detailed steps).
+```
+apps/web           # React + Vite + Tailwind PWA
+apps/extension     # React popup + MV3 worker + LeetCode content script  
+packages/shared    # Core types, XP logic, progression systems
+docs               # Architecture guides, schemas, operations
+```
 
-2. Installation
-Clone the repository and install dependencies:
+📖 **[See the Architecture Guide](docs/)** for database schema, auth flow, sync model, and scalability details.
 
-Bash
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js**: 20+
+- **Firebase**: Project with Google Authentication and Firestore enabled ([Setup Guide](docs/firebase-setup.md))
+
+### Installation
+
+```bash
+# Clone and install dependencies
 npm install
-Set up your environment variables by copying the example files:
 
-Bash
+# Configure environment variables
 cp apps/web/.env.example apps/web/.env.local
 cp apps/extension/.env.example apps/extension/.env.local
-Make sure to fill both .env.local files with the same Firebase web app configuration. Without valid Firebase credentials, the PWA will default to an empty state.
+# Fill both .env.local files with your Firebase credentials
+```
 
-Start the development server:
+### Development
 
-Bash
+```bash
+# Start dev server
 npm run dev
-3. Building the Project
-To check types and build both the extension and web app:
 
-Bash
+# Type-check and build
 npm run typecheck
 npm run build
-4. Extension Setup (Local Testing)
-Before building the extension, replace the OAuth client placeholder in apps/extension/manifest.json.
+```
 
-Go to chrome://extensions in your browser.
+### Extension Setup (Local)
 
-Enable Developer mode (top right).
+1. In `apps/extension/manifest.json`, replace the OAuth client placeholder
+2. Open `chrome://extensions` → Enable **Developer mode**
+3. Click **Load unpacked** → Select `apps/extension/dist`
+4. Configure a Chrome Extension OAuth client in Google Cloud Console and add it to your Firebase project
 
-Click Load unpacked and select the apps/extension/dist directory.
+### Deployment
 
-For Google Login: Configure a Chrome Extension OAuth client in Google Cloud for your extension ID, and add this client to your Firebase project's Google provider. (See the Extension Setup Guide).
-
-5. Deployment
-Deploy your Firebase rules, Firestore indexes, and host the PWA:
-
-Bash
+```bash
 npm install -g firebase-tools
 firebase login
 firebase use YOUR_PROJECT_ID
 firebase deploy --only firestore,hosting
-⚠️ Important MVP Boundaries & Technical Caveats
-DOM Observation: LeetCode does not expose a stable public browser API for submission events. Codekin relies on observing page state (DOM changes). Extension selectors and text fixtures must be tested whenever LeetCode ships a UI update.
+```
 
-Anti-Cheat & XP: Streak calculation and weekly resets are currently in the frontend for beta hardening. For production, anti-cheat measures will be implemented, and XP will be securely awarded via a Firebase Cloud Function.
+---
 
-🔮 Future Features (What's Next?)
-Codekin is actively evolving. Here is a look at what is currently being worked on and planned for future releases to make this the ultimate LeetCode companion:
+## ⚠️ MVP Boundaries & Technical Notes
 
-🛠️ Currently Working On
-AI-Powered "Nudges": Instead of giving away the answer, Codekin will read your current code and use an LLM to give you a localized, conceptual hint to get you unstuck.
+**DOM-Based Observation**: LeetCode doesn't expose a stable public API for submission events. Codekin observes DOM changes—selectors and fixtures need regular testing against LeetCode updates.
 
-Spaced Repetition System (SRS): An algorithm that tracks which problems took you the longest to solve and automatically reminds you to re-do them right before you are likely to forget the pattern.
+**Frontend XP (Beta)**: Streak calculation and weekly resets run client-side for beta validation. Production will move to backend with anti-cheat validation and secure XP awarding.
 
-🌟 Planned for the Future
-Analytics Dashboard: A deep dive into your strengths and weaknesses (e.g., "You excel at Two-Pointers, but struggle with Dynamic Programming") visualized through intuitive charts.
+---
 
-Companion Customization: Unlockable themes, skins, and specific companion types (e.g., a "Strict Coach" vs. a "Cheerleader") based on your LeetCode streaks.
+## 🔮 Roadmap: Features That Accelerate Your Growth
 
-Social Leaderboards: Opt-in leaderboards to compete with friends or study groups on weekly XP generation.
+### 🛠️ Currently Building
 
-Time-Complexity Analyzer: On-the-fly estimation of your code's Big-O time and space complexity before you hit submit.
+**AI-Powered Conceptual Nudges**  
+Stuck on a problem? Codekin analyzes your current code and provides targeted, conceptual hints—not solutions. Learn to think, not to copy.
+
+**Spaced Repetition Learning System**  
+An intelligent algorithm identifies problems you struggled with and surfaces them at optimal intervals before you'd forget the pattern. Studies show this multiplies retention by 3-5x.
+
+---
+
+### 🌟 Planned Features
+
+**Personalized Performance Analytics**  
+Discover your algorithmic strengths and weaknesses with automated analysis:
+- Topic-by-topic success rates (Two-Pointers, DP, Graphs, etc.)
+- Time-to-solve trends and improvement trajectories
+- Pattern recognition across similar problem types
+- Data-driven study recommendations
+
+**Difficulty Calibration & Progressive Challenges**  
+Smart problem selection that adapts to your current level:
+- Automatic identification of your optimal challenge level
+- Graduated problem sequences within each topic
+- Early detection of knowledge gaps before they compound
+
+**Code Quality Insights**  
+Real-time feedback on algorithmic performance:
+- Big-O time and space complexity estimation before submission
+- Performance bottleneck identification
+- Comparison with optimal solutions (after solving)
+- Best practice pattern suggestions
+
+**Weakness-Focused Practice Mode**  
+Targeted remediation system:
+- Automatically generates practice sets for your weaker topics
+- Tracks improvement velocity on previously difficult patterns
+- Confidence scoring across algorithm categories
+
+**Community Problem Analysis** *(Opt-in)*  
+Learn from aggregated data:
+- Most commonly failed problem patterns in the community
+- Emerging techniques for recently difficult problems
+- Performance benchmarks within your experience level
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React, Vite, Tailwind CSS, Framer Motion
+- **Backend**: Firebase (Firestore, Cloud Functions, Authentication)
+- **Extension**: Manifest V3, Content Scripts, Service Workers
+- **Languages**: TypeScript (57%), JavaScript (42%), HTML (1%)
+
+---
+
+## 📝 Contributing
+
+We welcome contributions that advance learning outcomes. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## 📄 License
+
+[Add your license here]
+
+---
+
+**Built with 🦊 to make LeetCode grind smarter, not harder.**
